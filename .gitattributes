@@ -1,2 +1,30 @@
-# Auto detect text files and perform LF normalization
+# ============================================================
+# Line-ending normalization.
+# Windows checks out CRLF, macOS checks out LF, and git stores
+# LF either way. Without this, every file one of us touches
+# shows up as "100% changed" to the other.
+# ============================================================
 * text=auto
+
+# ---------- Source ----------
+*.h    text diff=cpp
+*.hpp  text diff=cpp
+*.cpp  text diff=cpp
+*.c    text diff=cpp
+*.md   text
+
+# ---------- IDE project files ----------
+# Visual Studio genuinely wants CRLF in these.
+*.sln              text eol=crlf
+*.vcxproj          text eol=crlf
+*.vcxproj.filters  text eol=crlf
+
+# Xcode's project file. Marked as text so conflicts are visible
+# and reviewable — do NOT let git auto-merge this one silently.
+*.pbxproj          text eol=lf -merge
+
+# ---------- Binary ----------
+*.zip  binary
+*.png  binary
+*.jpg  binary
+*.pdf  binary

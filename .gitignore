@@ -1,0 +1,118 @@
+# ============================================================
+# CSE 232 Labs — shared .gitignore
+#
+# Goal: the ONLY things in git are the starter zips, the source
+# files (.h / .cpp), and the project files that tell the IDE
+# which sources to build. Everything an IDE writes about *you*
+# — window positions, breakpoints, build output — stays local.
+#
+# Tracked on purpose:
+#   Lab*.sln, Lab*.vcxproj, Lab*.vcxproj.filters   (Visual Studio)
+#   Lab*.xcodeproj/project.pbxproj                 (Xcode)
+# ============================================================
+
+# ---------- macOS ----------
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# ---------- Windows ----------
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ---------- Xcode: per-user state ----------
+# This is the stuff that caused churn last time. None of it
+# describes the project; it describes one person's window.
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad/
+*.xcscmblueprint
+*.xccheckout
+*.moved-aside
+DerivedData/
+build/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+# Xcode workspace: keep shared settings, drop personal ones
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# ---------- Visual Studio: per-user state ----------
+.vs/
+*.vcxproj.user
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.VC.db
+*.VC.VC.opendb
+*.opensdf
+*.sdf
+*.cachefile
+
+# ---------- Visual Studio: build output ----------
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+ipch/
+*.aps
+*.ncb
+*.pch
+*.idb
+*.pdb
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.ipdb
+*.tlog
+*.log
+*.lastbuildstate
+*.unsuccessfulbuild
+*.tli
+*.tlh
+*.res
+*.exp
+
+# ---------- Compiled / linked output (any platform) ----------
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.lib
+*.exe
+*.out
+*.app
+a.out
+
+# ---------- Editors / tools ----------
+.vscode/
+.idea/
+*.swp
+*~
+compile_commands.json
+.cache/
+cmake-build-*/
+
+# ---------- Unzipped-but-unused starter tiers ----------
+# Nothing here yet. If you unzip a tier you end up NOT doing,
+# just delete the folder rather than committing it.
