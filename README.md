@@ -8,13 +8,21 @@ Upstream: `https://github.com/Willpatbarr/CSE-232-Labs`
 
 ## Repo layout
 
-Each lab gets one folder. Inside are the three starter zips the course
-ships — the 85%, 100%, and 115% versions. Unzip the one you decide to do,
-*in that folder*, when you start the lab. Leave the zips committed.
+Each lab gets one folder holding everything for that lab:
+
+- the **lab spec PDF** from the course site
+- the **three starter zips** the course ships — the 85%, 100%, and 115%
+  versions
+
+Unzip the tier you decide to do *in that folder* when you start the lab.
+Leave the zips and the PDF committed.
 
 ```
-Lab02-Vector/          232.02.Lab.85.zip   232.02.Lab.100.zip   232.02.Lab.115.zip
-Lab03-Stack/           232.03.Lab.85.zip   232.03.Lab.100.zip   232.03.Lab.115.zip
+Lab01-Array/           Lab 01 _ Array.pdf
+Lab02-Vector/          Lab 02 _ Vector.pdf
+                       232.02.Lab.85.zip   232.02.Lab.100.zip   232.02.Lab.115.zip
+Lab03-Stack/           Lab 03 _ Stack.pdf
+                       232.03.Lab.85.zip   232.03.Lab.100.zip   232.03.Lab.115.zip
 Lab04-LinkedList/      ...
 Lab05-List/
 Lab06-BinaryTree/
@@ -26,7 +34,12 @@ Lab12-Deque/
 Lab13-Hash/
 ```
 
-(There is no Lab 11 — the course skips it.)
+Notes:
+
+- **There is no Lab 11** — the course skips it.
+- **Lab01-Array has the PDF but no starter zip.** Drop the zips in there
+  when you get them, same as every other lab.
+
 
 ---
 
