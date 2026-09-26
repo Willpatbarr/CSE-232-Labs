@@ -97,7 +97,7 @@
 					};
 				};
 			};
-			buildConfigurationList = C12A3C01255ECFEA00C22728 /* Build configuration list for PBXProject "Lab01" */;
+			buildConfigurationList = C12A3C01255ECFEA00C22728 /* Build configuration list for PBXProject "LabVector" */;
 			compatibilityVersion = "Xcode 9.3";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -243,6 +243,7 @@
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
+				MACOSX_DEPLOYMENT_TARGET = 26.6;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -252,6 +253,7 @@
 			buildSettings = {
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
+				MACOSX_DEPLOYMENT_TARGET = 26.6;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -259,7 +261,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		C12A3C01255ECFEA00C22728 /* Build configuration list for PBXProject "Lab01" */ = {
+		C12A3C01255ECFEA00C22728 /* Build configuration list for PBXProject "LabVector" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C12A3C0B255ECFEA00C22728 /* Debug */,
