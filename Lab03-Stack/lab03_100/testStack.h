@@ -69,7 +69,10 @@ public:
 
       // Delete
 
-      /* place your pop unit tests here */;
+      test_pop_empty();
+      test_pop_one();
+      test_pop_standard();
+      test_pop_standardMultiple();
 
       // Status
       test_size_empty();
@@ -1139,8 +1142,129 @@ public:
     * POP
     ***************************************/
 
+   // pop from an empty stack
+   void test_pop_empty()
+   {
+      // setup
+      custom::stack<Spy> s;
+      Spy::reset();
 
-   
+      // exercise
+      s.pop();
+
+      // verify
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(s.container.size() == 0);
+      assertEmptyFixture(s);
+
+      // teardown
+
+   }
+
+   // pop from a stack with 1 item
+   void test_pop_one()
+   {
+      // setup
+      //    +----+
+      //    | 26 |
+      //    +----+
+      custom::stack<Spy> s;
+      s.container.push_back(Spy(26));
+      Spy::reset();
+
+      // exercise
+      s.pop();
+
+      // verify
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDelete() == 1);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(Spy::numDestructor() == 1);
+      assertUnit(s.container.size() == 0);
+      //assertEmptyFixture(s);
+
+      // teardown
+   }
+
+   // pop 1 item from standard stack
+   void test_pop_standard()
+   {
+      // setup
+      //    +----+----+----+----+
+      //    | 26 | 49 | 67 | 89 |
+      //    +----+----+----+----+
+      custom::stack<Spy> s;
+      setupStandardFixture(s);
+      Spy::reset();
+
+      // exercise
+      s.pop();
+
+      // verify
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDelete() == 1);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(Spy::numDestructor() == 1);
+      assertUnit(s.container.back() == Spy(67));
+      assertUnit(s.container.size() == 3);
+
+      // teardown
+      teardownStandardFixture(s);
+   }
+
+   // pop multiple items from stack
+   void test_pop_standardMultiple()
+   {
+      // setup
+      //    +----+----+----+----+
+      //    | 26 | 49 | 67 | 89 |
+      //    +----+----+----+----+
+      custom::stack<Spy> s;
+      setupStandardFixture(s);
+      Spy::reset();
+
+      // exercise
+      s.pop();
+      s.pop();
+      s.pop();
+
+      // verify
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDelete() == 3);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(Spy::numDestructor() == 3);
+      assertUnit(s.container.back() == Spy(26));
+      assertUnit(s.container.size() == 1);
+
+      // teardown
+      teardownStandardFixture(s);
+   }
+
+
+
    /*************************************************************
     * SETUP STANDARD FIXTURE
     *      0    1    2    3

@@ -15,14 +15,13 @@
  *    This will contain the class definition of:
  *       stack             : similar to std::stack
  * Author
- *    Willam Barr and Connor Hobbs
+ *    William Barr and Connor Hobbs
  ************************************************************************/
 
 #pragma once
 
 #include <cassert>  // because I am paranoid
-//#include "vector.h"
-#include <vector>
+#include "vector.h"
 #include <utility>
 
 class TestStack; // forward declaration for unit tests
@@ -54,10 +53,10 @@ public:
    stack(stack <T> && rhs) : container(std::move(rhs.container))       {  }
 
    // create a stack by copying the contents of a vector
-   stack(const std::vector<T> &  rhs) : container(rhs)                 {  }
+   stack(const custom::vector<T> &  rhs) : container(rhs)              {  }
 
    // create a stack by moving the contents of a vector
-   stack(std::vector<T> && rhs) : container(std::move(rhs))            {  }
+   stack(custom::vector<T> && rhs) : container(std::move(rhs))         {  }
    ~stack()                                                            {  }
 
    //
@@ -88,34 +87,46 @@ public:
    // Access
    //
 
-         T& top()       { return *(new T); }
-   const T& top() const { return *(new T); }
+   T& top()
+   {
+      return container.back();
+   }
+   const T& top() const
+   {
+      return container.back();
+   }
 
-   // 
+   //
    // Insert
-   // 
+   //
 
-   void push(const T&  t) {  }
-   void push(      T&& t) {  }
+   void push(const T&  t)
+   {
+      container.push_back(t);
+   }
+   void push(      T&& t)
+   {
+      container.push_back(std::move(t));
+   }
 
    //
    // Remove
    //
 
-   void pop() 
-   { 
-      
+   void pop()
+   {
+      container.pop_back();
    }
 
    //
    // Status
    //
-   size_t  size () const { return 99;  }
-   bool empty   () const { return true; }
+   size_t  size () const { return container.size();  }
+   bool empty   () const { return container.empty(); }
    
 private:
    
-  std::vector<T> container;  // underlying container
+   custom::vector<T> container;  // underlying container
 };
 
 
