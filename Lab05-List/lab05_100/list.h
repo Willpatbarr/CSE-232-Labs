@@ -485,19 +485,8 @@ namespace custom
    template <typename T>
    void list <T> ::pop_back()
    {
-      if (numElements == 0)
-         return;
-
-      Node* old = pTail;
-      if (pHead == pTail)
-         pHead = pTail = nullptr;
-      else
-      {
-         pTail = pTail->pPrev;
-         pTail->pNext = nullptr;
-      }
-      delete old;
-      --numElements;
+      if (!empty())
+         erase(iterator(pTail));
    }
 
    /*********************************************
@@ -510,19 +499,8 @@ namespace custom
    template <typename T>
    void list <T> ::pop_front()
    {
-      if (numElements == 0)
-         return;
-
-      Node* old = pHead;
-      if (pHead == pTail)
-         pHead = pTail = nullptr;
-      else
-      {
-         pHead = pHead->pNext;
-         pHead->pPrev = nullptr;
-      }
-      delete old;
-      --numElements;
+      if (!empty())
+         erase(begin());
    }
 
    /*********************************************
