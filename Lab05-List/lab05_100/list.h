@@ -57,6 +57,7 @@ namespace custom
       list(Iterator first, Iterator last);
       ~list()
       {
+         clear();
       }
 
       // 
@@ -109,8 +110,8 @@ namespace custom
       // Status
       //
 
-      bool empty()  const { return true; }
-      size_t size() const { return 99; }
+      bool empty()  const { return numElements == 0; }
+      size_t size() const { return numElements; }
 
 
    private:
@@ -137,18 +138,9 @@ namespace custom
       //
       // Construct
       //
-      Node()
-      {
-         pNext = pPrev = nullptr;
-      }
-      Node(const T& data)
-      {
-         pNext = pPrev = nullptr;
-      }
-      Node(T&& data)
-      {
-         pNext = pPrev = nullptr;
-      }
+      Node() : data(), pNext(nullptr), pPrev(nullptr) {}
+      Node(const T& data) : data(data), pNext(nullptr), pPrev(nullptr) {}
+      Node(T&& data) : data(std::move(data)), pNext(nullptr), pPrev(nullptr) {}
 
       //
       // Data
@@ -243,8 +235,10 @@ namespace custom
    template <typename T>
    list <T> ::list(size_t num, const T& t)
    {
-      numElements = 99;
-      pHead = pTail = new list <T> ::Node();
+      numElements = 0;
+      pHead = pTail = nullptr;
+      for (size_t i = 0; i < num; i++)
+         push_back(t);
    }
 
    /*****************************************
@@ -283,8 +277,10 @@ namespace custom
    template <typename T>
    list <T> ::list(size_t num)
    {
-      numElements = 99;
-      pHead = pTail = new list <T> ::Node();
+      numElements = 0;
+      pHead = pTail = nullptr;
+      for (size_t i = 0; i < num; i++)
+         push_back(T());
    }
 
    /*****************************************
@@ -293,8 +289,8 @@ namespace custom
    template <typename T>
    list <T> ::list()
    {
-      numElements = 99;
-      pHead = pTail = new list <T> ::Node();
+      numElements = 0;
+      pHead = pTail = nullptr;
    }
 
    /*****************************************
@@ -393,7 +389,15 @@ namespace custom
    template <typename T>
    void list <T> ::clear()
    {
-
+      Node* p = pHead;
+      while (p != nullptr)
+      {
+         Node* pNext = p->pNext;
+         delete p;
+         p = pNext;
+      }
+      pHead = pTail = nullptr;
+      numElements = 0;
    }
 
    /*********************************************
@@ -406,13 +410,31 @@ namespace custom
    template <typename T>
    void list <T> ::push_back(const T& data)
    {
-
+      Node* n = new Node(data);
+      if (numElements == 0)
+         pHead = pTail = n;
+      else
+      {
+         n->pPrev = pTail;
+         pTail->pNext = n;
+         pTail = n;
+      }
+      ++numElements;
    }
 
    template <typename T>
    void list <T> ::push_back(T&& data)
    {
-
+      Node* n = new Node(std::move(data));
+      if (numElements == 0)
+         pHead = pTail = n;
+      else
+      {
+         n->pPrev = pTail;
+         pTail->pNext = n;
+         pTail = n;
+      }
+      ++numElements;
    }
 
    /*********************************************
@@ -425,13 +447,31 @@ namespace custom
    template <typename T>
    void list <T> ::push_front(const T& data)
    {
-
+      Node* n = new Node(data);
+      if (numElements == 0)
+         pHead = pTail = n;
+      else
+      {
+         n->pNext = pHead;
+         pHead->pPrev = n;
+         pHead = n;
+      }
+      ++numElements;
    }
 
    template <typename T>
    void list <T> ::push_front(T&& data)
    {
-
+      Node* n = new Node(std::move(data));
+      if (numElements == 0)
+         pHead = pTail = n;
+      else
+      {
+         n->pNext = pHead;
+         pHead->pPrev = n;
+         pHead = n;
+      }
+      ++numElements;
    }
 
 
@@ -445,7 +485,19 @@ namespace custom
    template <typename T>
    void list <T> ::pop_back()
    {
+      if (numElements == 0)
+         return;
 
+      Node* old = pTail;
+      if (pHead == pTail)
+         pHead = pTail = nullptr;
+      else
+      {
+         pTail = pTail->pPrev;
+         pTail->pNext = nullptr;
+      }
+      delete old;
+      --numElements;
    }
 
    /*********************************************
@@ -458,7 +510,19 @@ namespace custom
    template <typename T>
    void list <T> ::pop_front()
    {
+      if (numElements == 0)
+         return;
 
+      Node* old = pHead;
+      if (pHead == pTail)
+         pHead = pTail = nullptr;
+      else
+      {
+         pHead = pHead->pNext;
+         pHead->pPrev = nullptr;
+      }
+      delete old;
+      --numElements;
    }
 
    /*********************************************
@@ -471,7 +535,9 @@ namespace custom
    template <typename T>
    T& list <T> ::front()
    {
-      return *(new T);
+      if (empty())
+         throw "ERROR: unable to access data from an empty list";
+      return pHead->data;
    }
 
    /*********************************************
@@ -484,7 +550,9 @@ namespace custom
    template <typename T>
    T& list <T> ::back()
    {
-      return *(new T);
+      if (empty())
+         throw "ERROR: unable to access data from an empty list";
+      return pTail->data;
    }
 
    /******************************************
