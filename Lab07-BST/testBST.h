@@ -41,6 +41,10 @@ public:
       test_constructMove_empty();
       test_constructMove_one();
       test_constructMove_standard();
+      test_constructInitializer_empty();
+      test_constructInitializer_standard();
+      test_destruct_empty();
+      test_destruct_standard();
 
       // Assign
       test_assign_emptyToEmpty();
@@ -55,10 +59,30 @@ public:
       test_assignMove_oneToStandard();
       test_assignMove_standardToOne();
       test_assignMove_standardToStandard();
+      test_assignInitializer_oneToStandard();
+      test_assignInitializer_standardToEmpty();
       test_swap_emptyToEmpty();
       test_swap_standardToEmpty();
       test_swap_emptyToStandard();
       test_swap_standardToStandard();
+
+      // Iterator
+      test_begin_empty();
+      test_begin_standard();
+      test_end_standard();
+      test_iterator_increment_standardToParent();
+      test_iterator_increment_standardToChild();
+      test_iterator_increment_standardToGrandma();
+      test_iterator_increment_standardToGrandchild();
+      test_iterator_increment_standardToDone();
+      test_iterator_increment_standardEnd();
+      test_iterator_decrement_standardToParent();
+      test_iterator_decrement_standardToChild();
+      test_iterator_decrement_standardToGrandma();
+      test_iterator_decrement_standardToGrandchild();
+      test_iterator_decrement_standardToDone();
+      test_iterator_decrement_standardEnd();
+      test_iterator_dereference_standardRead();
 
       // Find
       test_find_empty();
@@ -82,6 +106,7 @@ public:
       test_erase_noChildren();
       test_erase_oneChild();
       test_erase_twoChildren();
+      test_erase_twoChildrenSpecial();
       test_clear_empty();
       test_clear_standard();
 
@@ -102,9 +127,13 @@ public:
    // default constructor, no allocations
    void test_construct_default()
    {  // setup
+      std::allocator<custom::BST<Spy>> alloc;
+      custom::BST<Spy> bst;
+      bst.numElements = 99;
+      bst.root = (custom::BST<Spy>::BNode*)0xBAADF00D;
       Spy::reset();
       // exercise
-      custom::BST<Spy> bst;
+      alloc.construct(&bst);  // just call the constructor by itself
       // verify
       assertUnit(Spy::numDefault() == 0);    
       assertUnit(Spy::numAlloc() == 0);
@@ -119,13 +148,17 @@ public:
     * COPY CONSTRUCTOR
     ***************************************/
 
-    // copy an empty BST
+   // copy an empty BST
    void test_constructCopy_empty()
    {  // setup
       custom::BST<Spy> bstSrc;
+      custom::BST<Spy> bstDest;
+      std::allocator<custom::BST<Spy>> alloc;
+      bstDest.numElements = 99;
+      bstDest.root = (custom::BST<Spy>::BNode*)0xBAADF00D;
       Spy::reset();
       // exercise
-      custom::BST<Spy> bstDest(bstSrc);
+      alloc.construct(&bstDest, bstSrc);  // just call the constructor by itself
       // verify
       assertUnit(Spy::numDefault() == 0);
       assertUnit(Spy::numAlloc() == 0);
@@ -337,6 +370,110 @@ public:
       // teardown
       teardownStandardFixture(bstDest);
    }
+
+   // create a BST with an empty initializer list.
+   void test_constructInitializer_empty()
+   {  // setup
+      std::initializer_list<Spy> ilSrc;
+      Spy::reset();
+      // exercise
+      custom::BST<Spy> bstDest(ilSrc);
+      // verify
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(Spy::numEquals() == 0);
+      assertUnit(Spy::numLessthan() == 0);
+      assertEmptyFixture(bstDest);
+   }  // teardown
+
+   // create a standard fixture from an initializer list
+   void test_constructInitializer_standard()
+   {  // setup
+      //                (50b)
+      //          +-------+-------+
+      //        (30b)           (70b)
+      //     +----+----+     +----+----+
+      //   (20r)     (40r) (60r)     (80r)
+      std::initializer_list<Spy> ilSrc{ Spy(50), Spy(30), Spy(70), Spy(20), Spy(40), Spy(60), Spy(80) };
+      Spy::reset();
+      // exercise
+      custom::BST <Spy> bstDest(ilSrc);
+      // verify
+      assertUnit(Spy::numCopy() == 7);
+      assertUnit(Spy::numAlloc() == 7);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(Spy::numEquals() == 0);
+      assertUnit(Spy::numLessthan() == 10);
+      assertStandardFixture(bstDest);
+      // teardown
+      teardownStandardFixture(bstDest);
+   }
+
+   /***************************************
+    * DESTRUCTOR
+    ***************************************/
+
+    // destroy an already empty fixture
+   void test_destruct_empty()
+   {
+      {
+         // setup
+         custom::BST<Spy> bst;
+         Spy::reset();
+         // exercise
+      }
+
+      // verify
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(Spy::numEquals() == 0);
+      assertUnit(Spy::numLessthan() == 0);
+   }  // teardown
+
+   // destroy the standard fixture
+   void test_destruct_standard()
+   {  // setup
+      {
+         //                (50b)
+         //          +-------+-------+
+         //        (30b)           (70b)
+         //     +----+----+     +----+----+
+         //   (20r)     (40r) (60r)     (80r)
+         custom::BST <Spy> bst;
+         setupStandardFixture(bst);
+         Spy::reset();
+         // exercise
+      }
+      // verify
+      assertUnit(Spy::numDestructor() == 7);  // destroy  [20][30][40][50][60][70][80]
+      assertUnit(Spy::numDelete() == 7);      // delete   [20][30][40][50][60][70][80]
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(Spy::numEquals() == 0);
+      assertUnit(Spy::numLessthan() == 0);
+   }  // teardown
 
    /***************************************
     * EMPTY and SIZE
@@ -917,6 +1054,69 @@ public:
       teardownStandardFixture(bstDest);
    }
 
+   // assign with an empty initializer list.
+   void test_assignInitializer_standardToEmpty()
+   {  // setup
+      std::initializer_list<Spy> ilSrc;
+      //                (50) = bstDest
+      //          +-------+-------+
+      //        (30)            (70)
+      //     +----+----+     +----+----+
+      //   (20)      (40)  (60)      (80)
+      custom::BST <Spy> bstDest;
+      setupStandardFixture(bstDest);
+      Spy::reset();
+      // exercise
+      bstDest = ilSrc;
+      // verify
+      assertUnit(Spy::numDestructor() == 7);  // destroy  [20][30][40][50][60][70][80]
+      assertUnit(Spy::numDelete() == 7);      // delete   [20][30][40][50][60][70][80]
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(Spy::numEquals() == 0);
+      assertUnit(Spy::numLessthan() == 0);
+      assertEmptyFixture(bstDest);
+   }  // teardown
+
+   // create a standard fixture from an initializer list
+   void test_assignInitializer_oneToStandard()
+   {  // setup
+      std::initializer_list<Spy> ilSrc{ Spy(50), Spy(30), Spy(70), Spy(20), Spy(40), Spy(60), Spy(80) };
+      //                (99) = bstDest
+      custom::BST <Spy> bstDest;
+      custom::BST <Spy>::BNode* p99 = new custom::BST<Spy>::BNode(Spy(99));
+      bstDest.root = p99;
+      bstDest.numElements = 1;
+      Spy::reset();
+      // exercise
+      bstDest = ilSrc;
+      // verify
+      assertUnit(Spy::numCopy() == 7);
+      assertUnit(Spy::numAlloc() == 7);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numDelete() == 1);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(Spy::numEquals() == 0);
+      assertUnit(Spy::numLessthan() == 10);
+      //                (50) = bstDest
+      //          +-------+-------+
+      //        (30)            (70)
+      //     +----+----+     +----+----+
+      //   (20)      (40)  (60)      (80)
+      assertStandardFixture(bstDest);
+      // teardown
+      teardownStandardFixture(bstDest);
+   }
+
+
    /***************************************
     * Swap
     *    BST::swap(BST &)
@@ -1109,22 +1309,809 @@ public:
    }  // teardown
 
    /***************************************
-    * Erase
-    *    BST::erase(it)
+    * Iterator
+    *     BST::begin()
+    *     BST::end()
+    *     BST::iterator::operator++()
+    *     BST::iterator::operator*()
     ***************************************/
 
-    // erase from an empty BST
-   void test_erase_empty()
+   // begin() from an empty BST
+   void test_begin_empty()
    {  // setup
-      custom::BST <Spy> bst;
-      Spy sErase(99);
+      custom::BST<Spy> bst;
+      custom::BST<Spy>::iterator it;
       Spy::reset();
       // exercise
-      bool fReturn = bst.erase(sErase);
+      it = bst.begin();
       // verify
-      assertUnit(Spy::numLessthan() == 0);
+      assertUnit(Spy::numLessthan() == 0);    // does not look at any element
+      assertUnit(Spy::numEquals() == 0);      // does not look at any element
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);     
+      assertUnit(Spy::numAssign() == 0);
       assertUnit(Spy::numCopy() == 0);
       assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(it.pNode == nullptr);
+      assertUnit(it == bst.end());
+      assertEmptyFixture(bst);
+   }  // teardown
+
+   // begin() from the standard fixture
+   void test_begin_standard()
+   {  // setup
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      custom::BST<Spy>::iterator it;
+      Spy::reset();
+      // exercise
+      it = bst.begin();
+      // verify
+      assertUnit(Spy::numLessthan() == 0);    // does not look at any element
+      assertUnit(Spy::numEquals() == 0);      // does not look at any element
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(it.pNode != nullptr);
+      assertUnit(bst.root != nullptr && bst.root->pLeft != nullptr);
+      if (it.pNode && bst.root && bst.root->pLeft)
+         assertUnit(it.pNode == bst.root->pLeft->pLeft);
+      if (it.pNode)
+         assertUnit(it.pNode->data == Spy(20));
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+
+   // end() from the standard fixture.
+   void test_end_standard()
+   {  // setup
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      custom::BST<Spy>::iterator it;
+      Spy::reset();
+      // exercise
+      it = bst.end();
+      // verify
+      assertUnit(Spy::numLessthan() == 0);    // does not look at any element
+      assertUnit(Spy::numEquals() == 0);      // does not look at any element
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(it.pNode == nullptr);
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+
+   // increment where the next node is the parent
+   void test_iterator_increment_standardToParent()
+   {  // setup
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //  [[20]]      40    60        80  
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      custom::BST<Spy>::iterator it;
+      it.pNode = bst.root->pLeft->pLeft;
+      Spy::reset();
+      // exercise
+      ++it;
+      // verify
+      assertUnit(Spy::numLessthan() == 0);    // does not look at any element
+      assertUnit(Spy::numEquals() == 0);      // does not look at any element
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      //                 50 
+      //          +-------+-------+
+      //       [[30]]            70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      assertUnit(it.pNode != nullptr);
+      assertUnit(bst.root != nullptr);
+      if (bst.root)
+         assertUnit(it.pNode == bst.root->pLeft);
+      if (it.pNode)
+         assertUnit(it.pNode->data == Spy(30));
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+
+
+   // increment where the next node is the right child
+   void test_iterator_increment_standardToChild()
+   {  // setup
+      //                 50 
+      //          +-------+-------+
+      //       [[30]]            70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      custom::BST<Spy>::iterator it;
+      it.pNode = bst.root->pLeft; // 30
+      Spy::reset();
+      // exercise
+      ++it;
+      // verify
+      assertUnit(Spy::numLessthan() == 0);    // does not look at any element
+      assertUnit(Spy::numEquals() == 0);      // does not look at any element
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20      [[40]]  60        80  
+      assertUnit(it.pNode != nullptr);
+      assertUnit(bst.root != nullptr && bst.root->pLeft != nullptr);
+      if (bst.root && bst.root->pLeft)
+         assertUnit(it.pNode == bst.root->pLeft->pRight);
+      if (it.pNode)
+         assertUnit(it.pNode->data == Spy(40));
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+
+   // increment where the next node is grandma
+   void test_iterator_increment_standardToGrandma()
+   {  // setup
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20      [[40]]  60        80  
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      custom::BST<Spy>::iterator it;
+      it.pNode = bst.root->pLeft->pRight; // 40
+      Spy::reset();
+      // exercise
+      ++it;
+      // verify
+      assertUnit(Spy::numLessthan() == 0);    // does not look at any element
+      assertUnit(Spy::numEquals() == 0);      // does not look at any element
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      //               [[50]] 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      assertUnit(it.pNode == bst.root);
+      if (it.pNode)
+         assertUnit(it.pNode->data == Spy(50));
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+
+   // increment where the next node is the right grandchild
+   void test_iterator_increment_standardToGrandchild()
+   {  // setup
+      //               [[50]] 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      custom::BST<Spy>::iterator it;
+      it.pNode = bst.root; // 50
+      Spy::reset();
+      // exercise
+      ++it;
+      // verify
+      assertUnit(Spy::numLessthan() == 0);    // does not look at any element
+      assertUnit(Spy::numEquals() == 0);      // does not look at any element
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40  [[60]]      80  
+      assertUnit(it.pNode != nullptr);
+      assertUnit(bst.root != nullptr && bst.root->pRight != nullptr);
+      if (bst.root && bst.root->pRight)
+         assertUnit(it.pNode == bst.root->pRight->pLeft);
+      if (it.pNode)
+         assertUnit(it.pNode->data == Spy(60));
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+
+   // increment where we are already at the last node
+   void test_iterator_increment_standardToDone()
+   {  // setup
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60      [[80]]  
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      custom::BST<Spy>::iterator it;
+      it.pNode = bst.root->pRight->pRight; // 80
+      Spy::reset();
+      // exercise
+      ++it;
+      // verify
+      assertUnit(Spy::numLessthan() == 0);    // does not look at any element
+      assertUnit(Spy::numEquals() == 0);      // does not look at any element
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      assertUnit(it.pNode == nullptr);
+      assertUnit(it == bst.end());
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+
+   // increment where we are already at the end
+   void test_iterator_increment_standardEnd()
+   {  // setup
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      custom::BST<Spy>::iterator it;
+      it.pNode = nullptr; 
+      Spy::reset();
+      // exercise
+      ++it;
+      // verify
+      assertUnit(Spy::numLessthan() == 0);    // does not look at any element
+      assertUnit(Spy::numEquals() == 0);      // does not look at any element
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      assertUnit(it.pNode == nullptr);
+      assertUnit(it == bst.end());
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+
+   // decrement where the next node is the parent
+   void test_iterator_decrement_standardToParent()
+   {  // setup
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20      [[40]]  60        80  
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      custom::BST<Spy>::iterator it;
+      it.pNode = bst.root->pLeft->pRight;
+      Spy::reset();
+      // exercise
+      --it;
+      // verify
+      assertUnit(Spy::numLessthan() == 0);    // does not look at any element
+      assertUnit(Spy::numEquals() == 0);      // does not look at any element
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      //                 50 
+      //          +-------+-------+
+      //       [[30]]            70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      assertUnit(it.pNode != nullptr);
+      assertUnit(bst.root != nullptr);
+      if (bst.root)
+         assertUnit(it.pNode == bst.root->pLeft);
+      if (it.pNode)
+         assertUnit(it.pNode->data == Spy(30));
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+
+
+   // decrement where the next node is the left child
+   void test_iterator_decrement_standardToChild()
+   {  // setup
+      //                 50 
+      //          +-------+-------+
+      //       [[30]]            70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      custom::BST<Spy>::iterator it;
+      it.pNode = bst.root->pLeft; // 30
+      Spy::reset();
+      // exercise
+      --it;
+      // verify
+      assertUnit(Spy::numLessthan() == 0);    // does not look at any element
+      assertUnit(Spy::numEquals() == 0);      // does not look at any element
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //  [[20]]      40    60        80  
+      assertUnit(it.pNode != nullptr);
+      assertUnit(bst.root != nullptr && bst.root->pLeft != nullptr);
+      if (bst.root && bst.root->pLeft)
+         assertUnit(it.pNode == bst.root->pLeft->pLeft);
+      if (it.pNode)
+         assertUnit(it.pNode->data == Spy(20));
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+
+   // decrement where the next node is grandma
+   void test_iterator_decrement_standardToGrandma()
+   {  // setup
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40  [[60]]      80  
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      custom::BST<Spy>::iterator it;
+      it.pNode = bst.root->pRight->pLeft; // 60
+      Spy::reset();
+      // exercise
+      --it;
+      // verify
+      assertUnit(Spy::numLessthan() == 0);    // does not look at any element
+      assertUnit(Spy::numEquals() == 0);      // does not look at any element
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      //               [[50]] 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      assertUnit(it.pNode == bst.root);
+      if (it.pNode)
+         assertUnit(it.pNode->data == Spy(50));
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+
+   // decrement where the next node is the right grandchild
+   void test_iterator_decrement_standardToGrandchild()
+   {  // setup
+      //               [[50]] 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      custom::BST<Spy>::iterator it;
+      it.pNode = bst.root; // 50
+      Spy::reset();
+      // exercise
+      --it;
+      // verify
+      assertUnit(Spy::numLessthan() == 0);    // does not look at any element
+      assertUnit(Spy::numEquals() == 0);      // does not look at any element
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20      [[40]]  60        80  
+      assertUnit(it.pNode != nullptr);
+      assertUnit(bst.root != nullptr && bst.root->pLeft != nullptr);
+      if (bst.root && bst.root->pLeft)
+         assertUnit(it.pNode == bst.root->pLeft->pRight);
+      if (it.pNode)
+         assertUnit(it.pNode->data == Spy(40));
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+
+   // decrement where we are already at the last node
+   void test_iterator_decrement_standardToDone()
+   {  // setup
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //  [[20]]      40    60        80    
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      custom::BST<Spy>::iterator it;
+      it.pNode = bst.root->pLeft->pLeft; // 20
+      Spy::reset();
+      // exercise
+      --it;
+      // verify
+      assertUnit(Spy::numLessthan() == 0);    // does not look at any element
+      assertUnit(Spy::numEquals() == 0);      // does not look at any element
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      assertUnit(it.pNode == nullptr);
+      assertUnit(it == bst.end());
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+
+   // increment where we are already at the end
+   void test_iterator_decrement_standardEnd()
+   {  // setup
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      custom::BST<Spy>::iterator it;
+      it.pNode = nullptr;
+      Spy::reset();
+      // exercise
+      --it;
+      // verify
+      assertUnit(Spy::numLessthan() == 0);    // does not look at any element
+      assertUnit(Spy::numEquals() == 0);      // does not look at any element
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      assertUnit(it.pNode == nullptr);
+      assertUnit(it == bst.end());
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+
+   // itereator dereference were we just read
+   void test_iterator_dereference_standardRead()
+   {  // setup
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20      [[40]]  60        80  
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      custom::BST<Spy>::iterator it;
+      it.pNode = bst.root->pLeft->pRight;
+      Spy s(99);
+      Spy::reset();
+      // exercise
+      s = *it;
+      // verify
+      assertUnit(Spy::numAssign() == 1);      // assign the results to s
+      assertUnit(Spy::numLessthan() == 0);    // does not look at any element
+      assertUnit(Spy::numEquals() == 0);      // does not look at any element
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(s == Spy(40));
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+
+   /***************************************
+    * Find
+    *    BST::find(const T &)
+    ***************************************/
+
+   // attempt to find something in an empty BST
+   void test_find_empty()
+   {  // setup
+      custom::BST<Spy> bst;
+      custom::BST<Spy>::iterator it;
+      Spy s(50);
+      Spy::reset();
+      // exercise
+      it = bst.find(s);
+      // verify
+      assertUnit(Spy::numLessthan() == 0);    // does not look at any element
+      assertUnit(Spy::numEquals() == 0);      // does not look at any element
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(it == bst.end());
+      assertEmptyFixture(bst);
+   }  // teardown
+   
+   // attemp to find something where it is at the beginning
+   void test_find_standardBegin()
+   {  // setup
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      custom::BST<Spy>::iterator it;
+      Spy s(20);
+      Spy::reset();
+      // exercise
+      it = bst.find(s);
+      // verify
+      assertUnit(Spy::numEquals() == 3);      // check [50][30][20]
+      assertUnit(Spy::numLessthan() == 2);    // compare [50][30]
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //  [[20]]      40    60        80  
+      assertUnit(it.pNode != nullptr);
+      if (it.pNode)
+         assertUnit(*it == Spy(20));
+      assertUnit(bst.root != nullptr && bst.root->pLeft != nullptr);
+      if (bst.root && bst.root->pLeft)
+         assertUnit(it.pNode == bst.root->pLeft->pLeft);
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+   
+   // attempt to find something where it is the last element
+   void test_find_standardLast()
+   {  // setup
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      custom::BST<Spy>::iterator it;
+      Spy s(80);
+      Spy::reset();
+      // exercise
+      it = bst.find(s);
+      // verify
+      assertUnit(Spy::numEquals() == 3);      // check [50][70][80]
+      assertUnit(Spy::numLessthan() == 2);    // compare [50][70]
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60      [[80]]
+      assertUnit(it.pNode != nullptr);
+      if (it.pNode)
+         assertUnit(*it == Spy(80));
+      assertUnit(bst.root != nullptr && bst.root->pRight != nullptr);
+      if (bst.root && bst.root->pRight)
+         assertUnit(it.pNode == bst.root->pRight->pRight);
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+
+   // attempt to find something where it is not there
+   void test_find_standardMissing()
+   {  // setup
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      custom::BST<Spy>::iterator it;
+      Spy s(42);
+      Spy::reset();
+      // exercise
+      it = bst.find(s);
+      // verify
+      assertUnit(Spy::numEquals() == 3);      // check [50][30][40]
+      assertUnit(Spy::numLessthan() == 3);    // compare [50][30][40]
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(it == bst.end());
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+
+
+
+   /***************************************
+    * Insert
+    *    BST::insert(const T &)
+    ***************************************/
+
+   // insert an element to the right of a single-element tree
+   void test_insert_oneRight()
+   {  // setup
+      //            (50) 
+      custom::BST <Spy> bst;
+      custom::BST<Spy>::BNode* p50 = new custom::BST<Spy>::BNode(Spy(50));
+      bst.root = p50;
+      bst.numElements = 1;
+      Spy s(60);
+      Spy::reset();
+      // exercise
+      auto pairBST = bst.insert(s);
+      // verify
+      assertUnit(Spy::numLessthan() == 1);    // compare [50]
+      assertUnit(Spy::numCopy() == 1);        // copy-create [60]
+      assertUnit(Spy::numAlloc() == 1);       // allocate [60]
       assertUnit(Spy::numEquals() == 0);
       assertUnit(Spy::numDestructor() == 0);
       assertUnit(Spy::numDelete() == 0);
@@ -1133,7 +2120,464 @@ public:
       assertUnit(Spy::numNondefault() == 0);
       assertUnit(Spy::numCopyMove() == 0);
       assertUnit(Spy::numAssignMove() == 0);
-      assertUnit(fReturn == false);
+      assertUnit(pairBST.first != bst.end());
+      assertUnit(pairBST.second == true);
+      if (pairBST.first != bst.end())
+         assertUnit(*(pairBST.first) == Spy(60));
+      //           (50) 
+      //             +----+
+      //                 (60) 
+      assertUnit(bst.size() == 2);
+      assertUnit(bst.numElements == 2);
+      assertUnit(bst.root == p50);
+
+      assertUnit(p50 != nullptr);
+      if (p50)
+      {
+         assertUnit(p50->data == Spy(50));
+         assertUnit(p50->pLeft == nullptr);
+         assertUnit(p50->pRight != nullptr);
+         assertUnit(p50->pParent == nullptr);
+      }
+      if (p50 && p50->pRight)
+      {
+         assertUnit(p50->pRight->data == Spy(60));
+         assertUnit(p50->pRight->pLeft == nullptr);
+         assertUnit(p50->pRight->pRight == nullptr);
+         assertUnit(p50->pRight->pParent == p50);
+      }
+      // teardown
+      if (p50 && p50->pRight && p50->pRight != p50)
+         delete p50->pRight;
+      if (p50)
+         delete p50;
+      bst.root = nullptr;
+      bst.numElements = 0;
+   }
+
+   // insert an element to the left of a single-element tree
+   void test_insert_oneLeft()
+   {  // setup
+      //            (50) 
+      custom::BST <Spy> bst;
+      custom::BST<Spy>::BNode* p50 = new custom::BST<Spy>::BNode(Spy(50));
+      bst.root = p50;
+      bst.numElements = 1;
+      Spy s(40);
+      Spy::reset();
+      // exercise
+      auto pairBST = bst.insert(s);
+      // verify
+      assertUnit(Spy::numLessthan() == 1);    // compare [50]
+      assertUnit(Spy::numCopy() == 1);        // copy-create [40]
+      assertUnit(Spy::numAlloc() == 1);       // allocate [40]
+      assertUnit(Spy::numEquals() == 0);
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(pairBST.first != bst.end());
+      assertUnit(pairBST.second == true);
+      if (pairBST.first != bst.end())
+         assertUnit(*(pairBST.first) == Spy(40));
+
+      //           (50) 
+      //        +----+
+      //      (40) 
+      assertUnit(bst.size() == 2);
+      assertUnit(bst.numElements == 2);
+      assertUnit(bst.root == p50);
+
+      assertUnit(p50 != nullptr);
+      if (p50)
+      {
+         assertUnit(p50->data == Spy(50));
+         assertUnit(p50->pLeft != nullptr);
+         assertUnit(p50->pRight == nullptr);
+         assertUnit(p50->pParent == nullptr);
+      }
+
+      if (p50 && p50->pLeft)
+      {
+         assertUnit(p50->pLeft->data == Spy(40));
+         assertUnit(p50->pLeft->pLeft == nullptr);
+         assertUnit(p50->pLeft->pRight == nullptr);
+         assertUnit(p50->pLeft->pParent == p50);
+      }
+
+      // teardown
+      if (p50 && p50->pLeft && p50->pLeft != p50)
+         delete p50->pLeft;
+      if (p50)
+         delete p50;
+      bst.root = nullptr;
+      bst.numElements = 0;
+   }
+
+   // insert a duplicate item in a BST
+   void test_insert_duplicate()
+   {  // setup
+      //            (50) 
+      custom::BST <Spy> bst;
+      custom::BST<Spy>::BNode* p50 = new custom::BST<Spy>::BNode(Spy(50));
+      bst.root = p50;
+      bst.numElements = 1;
+      Spy s(50);
+      Spy::reset();
+      // exercise
+      auto pairBST = bst.insert(s, false /* keepUnique */);
+      // verify
+      assertUnit(Spy::numLessthan() == 1);    // compare [50]
+      assertUnit(Spy::numCopy() == 1);        // copy-create [50]
+      assertUnit(Spy::numAlloc() == 1);       // allocate [50]
+      assertUnit(Spy::numEquals() == 0);
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(pairBST.first != bst.end());
+      assertUnit(pairBST.second == true);
+      if (pairBST.first != bst.end())
+         assertUnit(*(pairBST.first) == Spy(50));
+      //           (50) 
+      //             +----+
+      //                 (50r)
+      assertUnit(bst.size() == 2);
+      assertUnit(bst.numElements == 2);
+      assertUnit(bst.root == p50);
+
+      assertUnit(p50 != nullptr);
+      if (p50)
+      {
+         assertUnit(p50->data == Spy(50));
+         assertUnit(p50->pLeft == nullptr);
+         assertUnit(p50->pRight != nullptr);
+         assertUnit(p50->pParent == nullptr);
+      }
+
+      if (p50 && p50->pRight)
+      {
+         assertUnit(p50->pRight->data == Spy(50));
+         assertUnit(p50->pRight->pLeft == nullptr);
+         assertUnit(p50->pRight->pRight == nullptr);
+         assertUnit(p50->pRight->pParent == p50);
+      }
+
+      // teardown
+      if (p50 && p50->pRight && p50->pRight != p50)
+         delete p50->pRight;
+      if (p50)
+         delete p50;
+      bst.root = nullptr;
+      bst.numElements = 0;
+   }
+
+   // insert an item when it already exists
+   void test_insert_keepUnique()
+   {  // setup
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      Spy s(40);
+      Spy::reset();
+      // exercise
+      auto pairBST = bst.insert(s, true /* keepUnique */);
+      // verify
+      assertUnit(Spy::numLessthan() == 2);    // compare [50][30]
+      assertUnit(Spy::numEquals() == 3);      // compare [50][30][40]
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(pairBST.first != bst.end());
+      assertUnit(pairBST.second == false);
+      if (pairBST.first != bst.end())
+         assertUnit(*(pairBST.first) == Spy(40));
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+
+
+
+
+   /***************************************
+    * Insert Move
+    *    BST::insert(T &&)
+    ***************************************/
+
+    // insert an element to the right of a single-element tree
+   void test_insertMove_oneRight()
+   {  // setup
+      //            (50) 
+      custom::BST <Spy> bst;
+      custom::BST<Spy>::BNode* p50 = new custom::BST<Spy>::BNode(Spy(50));
+      bst.root = p50;
+      bst.numElements = 1;
+      Spy s(60);
+      Spy::reset();
+      // exercise
+      auto pairBST = bst.insert(std::move(s));
+      // verify
+      assertUnit(Spy::numLessthan() == 1);    // compare [50]
+      assertUnit(Spy::numCopyMove() == 1);    // assign move [60]
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numEquals() == 0);
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(pairBST.first != bst.end());
+      assertUnit(pairBST.second == true);
+      if (pairBST.first != bst.end())
+         assertUnit(*(pairBST.first) == Spy(60));
+      //           (50) 
+      //             +----+
+      //                 (60) 
+      assertUnit(bst.size() == 2);
+      assertUnit(bst.numElements == 2);
+      assertUnit(bst.root == p50);
+
+      assertUnit(p50 != nullptr);
+      if (p50)
+      {
+         assertUnit(p50->data == Spy(50));
+         assertUnit(p50->pLeft == nullptr);
+         assertUnit(p50->pRight != nullptr);
+         assertUnit(p50->pParent == nullptr);
+      }
+      if (p50 && p50->pRight)
+      {
+         assertUnit(p50->pRight->data == Spy(60));
+         assertUnit(p50->pRight->pLeft == nullptr);
+         assertUnit(p50->pRight->pRight == nullptr);
+         assertUnit(p50->pRight->pParent == p50);
+      }
+      // teardown
+      if (p50 && p50->pRight && p50->pRight != p50)
+         delete p50->pRight;
+      if (p50)
+         delete p50;
+      bst.root = nullptr;
+      bst.numElements = 0;
+   }
+
+   // insert an element to the left of a single-element tree
+   void test_insertMove_oneLeft()
+   {  // setup
+      //            (50) 
+      custom::BST <Spy> bst;
+      custom::BST<Spy>::BNode* p50 = new custom::BST<Spy>::BNode(Spy(50));
+      bst.root = p50;
+      bst.numElements = 1;
+      Spy s(40);
+      Spy::reset();
+      // exercise
+      auto pairBST = bst.insert(std::move(s));
+      // verify
+      assertUnit(Spy::numLessthan() == 1);    // compare [50]
+      assertUnit(Spy::numCopyMove() == 1);    // assign move [40]
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);   
+      assertUnit(Spy::numEquals() == 0);
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(s.empty() == true);
+      assertUnit(pairBST.first != bst.end());
+      assertUnit(pairBST.second == true);
+      if (pairBST.first != bst.end())
+         assertUnit(*(pairBST.first) == Spy(40));
+
+      //           (50) 
+      //        +----+
+      //      (40) 
+      assertUnit(bst.size() == 2);
+      assertUnit(bst.numElements == 2);
+      assertUnit(bst.root == p50);
+
+      assertUnit(p50 != nullptr);
+      if (p50)
+      {
+         assertUnit(p50->data == Spy(50));
+         assertUnit(p50->pLeft != nullptr);
+         assertUnit(p50->pRight == nullptr);
+         assertUnit(p50->pParent == nullptr);
+      }
+
+      if (p50 && p50->pLeft)
+      {
+         assertUnit(p50->pLeft->data == Spy(40));
+         assertUnit(p50->pLeft->pLeft == nullptr);
+         assertUnit(p50->pLeft->pRight == nullptr);
+         assertUnit(p50->pLeft->pParent == p50);
+      }
+
+      // teardown
+      if (p50 && p50->pLeft && p50->pLeft != p50)
+         delete p50->pLeft;
+      if (p50)
+         delete p50;
+      bst.root = nullptr;
+      bst.numElements = 0;
+   }
+
+   // insert a duplicate item in a BST
+   void test_insertMove_duplicate()
+   {  // setup
+      //            (50) 
+      custom::BST <Spy> bst;
+      custom::BST<Spy>::BNode* p50 = new custom::BST<Spy>::BNode(Spy(50));
+      bst.root = p50;
+      bst.numElements = 1;
+      Spy s(50);
+      Spy::reset();
+      // exercise
+      auto pairBST = bst.insert(std::move(s), false /* keepUnique */);
+      // verify
+      assertUnit(Spy::numLessthan() == 1);    // compare [50]
+      assertUnit(Spy::numCopyMove() == 1);    // assign move [50]
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numEquals() == 0);
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(s.empty() == true);
+      assertUnit(pairBST.first != bst.end());
+      assertUnit(pairBST.second == true);
+      if (pairBST.first != bst.end())
+         assertUnit(*(pairBST.first) == Spy(50));
+      //           (50) 
+      //            +----+
+      //                (50r)
+      assertUnit(bst.size() == 2);
+      assertUnit(bst.numElements == 2);
+      assertUnit(bst.root == p50);
+
+      assertUnit(p50 != nullptr);
+      if (p50)
+      {
+         assertUnit(p50->data == Spy(50));
+         assertUnit(p50->pLeft == nullptr);
+         assertUnit(p50->pRight != nullptr);
+         assertUnit(p50->pParent == nullptr);
+      }
+
+      if (p50 && p50->pRight)
+      {
+         assertUnit(p50->pRight->data == Spy(50));
+         assertUnit(p50->pRight->pLeft == nullptr);
+         assertUnit(p50->pRight->pRight == nullptr);
+         assertUnit(p50->pRight->pParent == p50);
+      }
+
+      // teardown
+      if (p50 && p50->pRight && p50->pRight != p50)
+         delete p50->pRight;
+      if (p50)
+         delete p50;
+      bst.root = nullptr;
+      bst.numElements = 0;
+   }
+
+   // insert an item when it already exists
+   void test_insertMove_keepUnique()
+   {  // setup
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      custom::BST <Spy> bst;
+      setupStandardFixture(bst);
+      Spy s(40);
+      Spy::reset();
+      // exercise
+      auto pairBST = bst.insert(std::move(s), true /* keepUnique */);
+      // verify
+      assertUnit(Spy::numLessthan() == 2);    // compare [50][30]
+      assertUnit(Spy::numEquals() == 3);      // compare [50][30][40]
+      assertUnit(Spy::numCopy() == 0);
+      assertUnit(Spy::numAlloc() == 0);
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(s.empty() == false);
+      assertUnit(pairBST.first != bst.end());
+      assertUnit(pairBST.second == false);
+      if (pairBST.first != bst.end())
+         assertUnit(*(pairBST.first) == Spy(40));
+      //                 50 
+      //          +-------+-------+
+      //         30              70  
+      //     +----+----+     +----+----+
+      //    20        40    60        80  
+      assertStandardFixture(bst);
+      // teardown
+      teardownStandardFixture(bst);
+   }
+
+
+   /***************************************
+    * Erase
+    *    BST::erase(it)
+    ***************************************/
+
+   // erase from an empty BST
+   void test_erase_empty()
+   {  // setup
+      custom::BST <Spy> bst;
+      auto it = bst.end();
+      Spy::reset();
+      // exercise
+      auto itReturn = bst.erase(it);
+      // verify
+      assertUnit(Spy::numLessthan() == 0);   
+      assertUnit(Spy::numCopy() == 0);       
+      assertUnit(Spy::numAlloc() == 0);      
+      assertUnit(Spy::numEquals() == 0);
+      assertUnit(Spy::numDestructor() == 0);
+      assertUnit(Spy::numDelete() == 0);
+      assertUnit(Spy::numAssign() == 0);
+      assertUnit(Spy::numDefault() == 0);
+      assertUnit(Spy::numNondefault() == 0);
+      assertUnit(Spy::numCopyMove() == 0);
+      assertUnit(Spy::numAssignMove() == 0);
+      assertUnit(itReturn == bst.end());
       assertEmptyFixture(bst);
    }  // teardown
 
@@ -1147,15 +2591,15 @@ public:
       //    20        40    60        80  
       custom::BST <Spy> bst;
       setupStandardFixture(bst);
-      Spy sErase(99);
+      auto it = bst.end();
       Spy::reset();
       // exercise
-      bool fReturn = bst.erase(sErase);
+      auto itReturn = bst.erase(it);
       // verify
-      assertUnit(Spy::numLessthan() == 3);
+      assertUnit(Spy::numLessthan() == 0);
       assertUnit(Spy::numCopy() == 0);
       assertUnit(Spy::numAlloc() == 0);
-      assertUnit(Spy::numEquals() == 3);
+      assertUnit(Spy::numEquals() == 0);
       assertUnit(Spy::numDestructor() == 0);
       assertUnit(Spy::numDelete() == 0);
       assertUnit(Spy::numAssign() == 0);
@@ -1163,7 +2607,7 @@ public:
       assertUnit(Spy::numNondefault() == 0);
       assertUnit(Spy::numCopyMove() == 0);
       assertUnit(Spy::numAssignMove() == 0);
-      assertUnit(fReturn == false);
+      assertUnit(itReturn == bst.end());
       assertStandardFixture(bst);
       // teardown
       teardownStandardFixture(bst);
@@ -1179,17 +2623,17 @@ public:
       //    20        40  [[60]]      80  
       custom::BST <Spy> bst;
       setupStandardFixture(bst);
-      Spy sErase(60);
+      auto it = custom::BST <Spy> :: iterator(bst.root->pRight->pLeft);
       Spy::reset();
       // exercise
-      bool fReturn = bst.erase(sErase);
+      auto itReturn = bst.erase(it);
       // verify
       assertUnit(Spy::numDestructor() == 1);  // destroy [60]
       assertUnit(Spy::numDelete() == 1);      // delete [60]
-      assertUnit(Spy::numLessthan() == 3);
+      assertUnit(Spy::numLessthan() == 0);
       assertUnit(Spy::numCopy() == 0);
       assertUnit(Spy::numAlloc() == 0);
-      assertUnit(Spy::numEquals() == 3);
+      assertUnit(Spy::numEquals() == 0);
       assertUnit(Spy::numAssign() == 0);
       assertUnit(Spy::numDefault() == 0);
       assertUnit(Spy::numNondefault() == 0);
@@ -1197,10 +2641,10 @@ public:
       assertUnit(Spy::numAssignMove() == 0);
       //                 50 
       //          +-------+-------+
-      //         30              70
+      //         30            [[70]]
       //     +----+----+          +----+
       //    20        40              80  
-      assertUnit(fReturn == true);
+      assertUnit(itReturn == custom::BST <Spy> ::iterator(bst.root->pRight));
       assertUnit(bst.root->pRight->pLeft == nullptr);
       assertUnit(bst.numElements == 6);
       bst.root->pRight->pLeft = new custom::BST<Spy>::BNode(Spy(60));
@@ -1210,7 +2654,7 @@ public:
       // teardown
       teardownStandardFixture(bst);
    }  // teardown
-
+   
    void test_erase_oneChild()
    {  // setup
       //                 50 
@@ -1220,7 +2664,7 @@ public:
       //              30          
       //            +--+--+
       //           20    40
-      custom::BST <int> bst;
+      custom :: BST <int> bst;
       auto p10 = new custom::BST<int>::BNode(10);
       auto p20 = new custom::BST<int>::BNode(20);
       auto p30 = new custom::BST<int>::BNode(30);
@@ -1234,15 +2678,16 @@ public:
       p30->pLeft = p20;
       p30->pRight = p40;
       bst.numElements = 6;
+      auto it = custom::BST <int> :: iterator(p10);
       // exercise
-      bool fReturn = bst.erase(10);
+      auto itReturn = bst.erase(it);
       // verify
       //                 50
       //          +-------+-------+
       //         30              60
       //     +----+----+
-      //    20        40
-      assertUnit(fReturn == true);
+      //  [[20]]      40
+      assertUnit(itReturn == custom::BST <int> ::iterator(p20));
       assertUnit(bst.numElements == 5);
       assertUnit(bst.root == p50);
       assertUnit(p50->pLeft == p30);
@@ -1297,17 +2742,18 @@ public:
       p50->pRight = p60;
       p30->pRight = p40;
       bst.numElements = 8;
+      auto it = custom::BST <int> ::iterator(p20);
       // exercise
-      bool fReturn = bst.erase(20);
+      auto itReturn = bst.erase(it);
       // verify
       //                 70
       //          +-------+-------+
-      //         30              80
+      //       [[30]]            80
       //     +----+----+     
       //    10        50    
       //            +--+--+
       //           40    60
-      assertUnit(fReturn == true);
+      assertUnit(itReturn == custom::BST <int> ::iterator(p30));
       assertUnit(bst.root == p70);
       assertUnit(bst.numElements == 7);
       assertUnit(p70->pLeft == p30);
@@ -1341,577 +2787,82 @@ public:
       bst.root = nullptr;
    }
 
-
-   /***************************************
-    * Find
-    *    BST::find(const T &)
-    ***************************************/
-
-    // attempt to find something in an empty BST
-   void test_find_empty()
-   {  // setup
-      custom::BST<Spy> bst;
-      bool fFound;
-      Spy s(50);
-      Spy::reset();
-      // exercise
-      fFound = bst.find(s);
-      // verify
-      assertUnit(Spy::numLessthan() == 0);    // does not look at any element
-      assertUnit(Spy::numEquals() == 0);      // does not look at any element
-      assertUnit(Spy::numDestructor() == 0);
-      assertUnit(Spy::numDelete() == 0);
-      assertUnit(Spy::numAssign() == 0);
-      assertUnit(Spy::numCopy() == 0);
-      assertUnit(Spy::numAlloc() == 0);
-      assertUnit(Spy::numDefault() == 0);
-      assertUnit(Spy::numNondefault() == 0);
-      assertUnit(Spy::numCopyMove() == 0);
-      assertUnit(Spy::numAssignMove() == 0);
-      assertUnit(fFound == false);
-      assertEmptyFixture(bst);
-   }  // teardown
-
-   // attemp to find something where it is at the beginning
-   void test_find_standardBegin()
+   void test_erase_twoChildrenSpecial()
    {  // setup
       //                 50 
       //          +-------+-------+
-      //         30              70  
+      //       [[30]]            70  
       //     +----+----+     +----+----+
       //    20        40    60        80  
       custom::BST <Spy> bst;
       setupStandardFixture(bst);
-      bool fFound;
-      Spy s(20);
+      auto it = custom::BST <Spy> ::iterator(bst.root->pLeft);
       Spy::reset();
       // exercise
-      fFound = bst.find(s);
+      auto itReturn = bst.erase(it);
       // verify
-      assertUnit(Spy::numEquals() == 3);      // check [50][30][20]
-      assertUnit(Spy::numLessthan() == 2);    // compare [50][30]
-      assertUnit(Spy::numDestructor() == 0);
-      assertUnit(Spy::numDelete() == 0);
-      assertUnit(Spy::numAssign() == 0);
-      assertUnit(Spy::numCopy() == 0);
-      assertUnit(Spy::numAlloc() == 0);
-      assertUnit(Spy::numDefault() == 0);
-      assertUnit(Spy::numNondefault() == 0);
-      assertUnit(Spy::numCopyMove() == 0);
-      assertUnit(Spy::numAssignMove() == 0);
-      //                 50 
+      //                 50  
       //          +-------+-------+
-      //         30              70  
-      //     +----+----+     +----+----+
-      //  [[20]]      40    60        80  
-      assertUnit(fFound == true);
-      assertStandardFixture(bst);
-      // teardown
-      teardownStandardFixture(bst);
-   }
-
-   // attempt to find something where it is the last element
-   void test_find_standardLast()
-   {  // setup
-      //                 50 
-      //          +-------+-------+
-      //         30              70  
-      //     +----+----+     +----+----+
-      //    20        40    60        80  
-      custom::BST <Spy> bst;
-      setupStandardFixture(bst);
-      bool fFound;
-      Spy s(80);
-      Spy::reset();
-      // exercise
-      fFound = bst.find(s);
-      // verify
-      assertUnit(Spy::numEquals() == 3);      // check [50][70][80]
-      assertUnit(Spy::numLessthan() == 2);    // compare [50][70]
-      assertUnit(Spy::numDestructor() == 0);
-      assertUnit(Spy::numDelete() == 0);
-      assertUnit(Spy::numAssign() == 0);
-      assertUnit(Spy::numCopy() == 0);
-      assertUnit(Spy::numAlloc() == 0);
-      assertUnit(Spy::numDefault() == 0);
-      assertUnit(Spy::numNondefault() == 0);
-      assertUnit(Spy::numCopyMove() == 0);
-      assertUnit(Spy::numAssignMove() == 0);
-      //                 50 
-      //          +-------+-------+
-      //         30              70  
-      //     +----+----+     +----+----+
-      //    20        40    60      [[80]]
-      assertUnit(fFound == true);
-      assertStandardFixture(bst);
-      // teardown
-      teardownStandardFixture(bst);
-   }
-
-   // attempt to find something where it is not there
-   void test_find_standardMissing()
-   {  // setup
-      //                 50 
-      //          +-------+-------+
-      //         30              70  
-      //     +----+----+     +----+----+
-      //    20        40    60        80  
-      custom::BST <Spy> bst;
-      setupStandardFixture(bst);
-      bool fFound;
-      Spy s(42);
-      Spy::reset();
-      // exercise
-      fFound = bst.find(s);
-      // verify
-      assertUnit(Spy::numEquals() == 3);      // check [50][30][40]
-      assertUnit(Spy::numLessthan() == 3);    // compare [50][30][40]
-      assertUnit(Spy::numDestructor() == 0);
-      assertUnit(Spy::numDelete() == 0);
-      assertUnit(Spy::numAssign() == 0);
-      assertUnit(Spy::numCopy() == 0);
-      assertUnit(Spy::numAlloc() == 0);
-      assertUnit(Spy::numDefault() == 0);
-      assertUnit(Spy::numNondefault() == 0);
-      assertUnit(Spy::numCopyMove() == 0);
-      assertUnit(Spy::numAssignMove() == 0);
-      assertUnit(fFound == false);
-      assertStandardFixture(bst);
-      // teardown
-      teardownStandardFixture(bst);
-   }
-
-
-   /***************************************
-    * Insert
-    *    BST::insert(const T &)
-    ***************************************/
-
-   // insert an element to the right of a single-element tree
-   void test_insert_oneRight()
-   {  // setup
-      //            (50) 
-      custom::BST <Spy> bst;
-      custom::BST<Spy>::BNode* p50 = new custom::BST<Spy>::BNode(Spy(50));
-      bst.root = p50;
-      bst.numElements = 1;
-      Spy s(60);
-      Spy::reset();
-      // exercise
-      auto fBST = bst.insert(s);
-      // verify
-      assertUnit(Spy::numLessthan() == 1);    // compare [50]
-      assertUnit(Spy::numCopy() == 1);        // copy-create [60]
-      assertUnit(Spy::numAlloc() == 1);       // allocate [60]
-      assertUnit(Spy::numEquals() == 0);
-      assertUnit(Spy::numDestructor() == 0);
-      assertUnit(Spy::numDelete() == 0);
-      assertUnit(Spy::numAssign() == 0);
-      assertUnit(Spy::numDefault() == 0);
-      assertUnit(Spy::numNondefault() == 0);
-      assertUnit(Spy::numCopyMove() == 0);
-      assertUnit(Spy::numAssignMove() == 0);
-      assertUnit(fBST == true);
-      //           (50) 
-      //             +----+
-      //                 (60) 
-      assertUnit(bst.size() == 2);
-      assertUnit(bst.numElements == 2);
-      assertUnit(bst.root == p50);
-
-      assertUnit(p50 != nullptr);
-      if (p50)
-      {
-         assertUnit(p50->data == Spy(50));
-         assertUnit(p50->pLeft == nullptr);
-         assertUnit(p50->pRight != nullptr);
-         assertUnit(p50->pParent == nullptr);
-      }
-      if (p50 && p50->pRight)
-      {
-         assertUnit(p50->pRight->data == Spy(60));
-         assertUnit(p50->pRight->pLeft == nullptr);
-         assertUnit(p50->pRight->pRight == nullptr);
-         assertUnit(p50->pRight->pParent == p50);
-      }
-      // teardown
-      if (p50 && p50->pRight && p50->pRight != p50)
-         delete p50->pRight;
-      if (p50)
-         delete p50;
-      bst.root = nullptr;
-      bst.numElements = 0;
-   }
-
-   // insert an element to the left of a single-element tree
-   void test_insert_oneLeft()
-   {  // setup
-      //            (50) 
-      custom::BST <Spy> bst;
-      custom::BST<Spy>::BNode* p50 = new custom::BST<Spy>::BNode(Spy(50));
-      bst.root = p50;
-      bst.numElements = 1;
-      Spy s(40);
-      Spy::reset();
-      // exercise
-      auto fBST = bst.insert(s);
-      // verify
-      assertUnit(Spy::numLessthan() == 1);    // compare [50]
-      assertUnit(Spy::numCopy() == 1);        // copy-create [40]
-      assertUnit(Spy::numAlloc() == 1);       // allocate [40]
-      assertUnit(Spy::numEquals() == 0);
-      assertUnit(Spy::numDestructor() == 0);
-      assertUnit(Spy::numDelete() == 0);
-      assertUnit(Spy::numAssign() == 0);
-      assertUnit(Spy::numDefault() == 0);
-      assertUnit(Spy::numNondefault() == 0);
-      assertUnit(Spy::numCopyMove() == 0);
-      assertUnit(Spy::numAssignMove() == 0);
-      assertUnit(fBST = true);
-
-      //           (50) 
-      //        +----+
-      //      (40) 
-      assertUnit(bst.size() == 2);
-      assertUnit(bst.numElements == 2);
-      assertUnit(bst.root == p50);
-
-      assertUnit(p50 != nullptr);
-      if (p50)
-      {
-         assertUnit(p50->data == Spy(50));
-         assertUnit(p50->pLeft != nullptr);
-         assertUnit(p50->pRight == nullptr);
-         assertUnit(p50->pParent == nullptr);
-      }
-
-      if (p50 && p50->pLeft)
-      {
-         assertUnit(p50->pLeft->data == Spy(40));
-         assertUnit(p50->pLeft->pLeft == nullptr);
-         assertUnit(p50->pLeft->pRight == nullptr);
-         assertUnit(p50->pLeft->pParent == p50);
-      }
-
-      // teardown
-      if (p50 && p50->pLeft && p50->pLeft != p50)
-         delete p50->pLeft;
-      if (p50)
-         delete p50;
-      bst.root = nullptr;
-      bst.numElements = 0;
-   }
-
-   // insert a duplicate item in a BST
-   void test_insert_duplicate()
-   {  // setup
-      //            (50) 
-      custom::BST <Spy> bst;
-      custom::BST<Spy>::BNode* p50 = new custom::BST<Spy>::BNode(Spy(50));
-      bst.root = p50;
-      bst.numElements = 1;
-      Spy s(50);
-      Spy::reset();
-      // exercise
-      auto fBST = bst.insert(s, false /* keepUnique */);
-      // verify
-      assertUnit(Spy::numLessthan() == 1);    // compare [50]
-      assertUnit(Spy::numCopy() == 1);        // copy-create [50]
-      assertUnit(Spy::numAlloc() == 1);       // allocate [50]
-      assertUnit(Spy::numEquals() == 0);
-      assertUnit(Spy::numDestructor() == 0);
-      assertUnit(Spy::numDelete() == 0);
-      assertUnit(Spy::numAssign() == 0);
-      assertUnit(Spy::numDefault() == 0);
-      assertUnit(Spy::numNondefault() == 0);
-      assertUnit(Spy::numCopyMove() == 0);
-      assertUnit(Spy::numAssignMove() == 0);
-      assertUnit(fBST == true);
-      //           (50) 
-      //        +----+
-      //      (50r)
-      assertUnit(bst.size() == 2);
-      assertUnit(bst.numElements == 2);
-      assertUnit(bst.root == p50);
-
-      assertUnit(p50 != nullptr);
-      if (p50)
-      {
-         assertUnit(p50->data == Spy(50));
-         assertUnit(p50->pLeft == nullptr);
-         assertUnit(p50->pRight != nullptr);
-         assertUnit(p50->pParent == nullptr);
-      }
-
-      if (p50 && p50->pRight)
-      {
-         assertUnit(p50->pRight->data == Spy(50));
-         assertUnit(p50->pRight->pLeft == nullptr);
-         assertUnit(p50->pRight->pRight == nullptr);
-         assertUnit(p50->pRight->pParent == p50);
-      }
-
-      // teardown
-      if (p50 && p50->pRight && p50->pRight != p50)
-         delete p50->pRight;
-      if (p50)
-         delete p50;
-      bst.root = nullptr;
-      bst.numElements = 0;
-   }
-
-   // insert an item when it already exists
-   void test_insert_keepUnique()
-   {  // setup
-      //                 50 
-      //          +-------+-------+
-      //         30              70  
-      //     +----+----+     +----+----+
-      //    20        40    60        80  
-      custom::BST <Spy> bst;
-      setupStandardFixture(bst);
-      Spy s(40);
-      Spy::reset();
-      // exercise
-      auto fBST = bst.insert(s, true /* keepUnique */);
-      // verify
-      assertUnit(Spy::numLessthan() == 2);    // compare [50][30]
-      assertUnit(Spy::numEquals() == 3);      // compare [50][30][40]
-      assertUnit(Spy::numCopy() == 0);
-      assertUnit(Spy::numAlloc() == 0);
-      assertUnit(Spy::numDestructor() == 0);
-      assertUnit(Spy::numDelete() == 0);
-      assertUnit(Spy::numAssign() == 0);
-      assertUnit(Spy::numDefault() == 0);
-      assertUnit(Spy::numNondefault() == 0);
-      assertUnit(Spy::numCopyMove() == 0);
-      assertUnit(Spy::numAssignMove() == 0);
-      assertUnit(fBST == false);
-      //                 50 
-      //          +-------+-------+
-      //         30              70  
-      //     +----+----+     +----+----+
-      //    20        40    60        80  
-      assertStandardFixture(bst);
-      // teardown
-      teardownStandardFixture(bst);
-   }
-
-
-   /***************************************
-    * Insert Move
-    *    BST::insert(T &&)
-    ***************************************/
-
-    // insert an element to the right of a single-element tree
-   void test_insertMove_oneRight()
-   {  // setup
-      //            (50) 
-      custom::BST <Spy> bst;
-      custom::BST<Spy>::BNode* p50 = new custom::BST<Spy>::BNode(Spy(50));
-      bst.root = p50;
-      bst.numElements = 1;
-      Spy s(60);
-      Spy::reset();
-      // exercise
-      auto fBST = bst.insert(std::move(s));
-      // verify
-      assertUnit(Spy::numLessthan() == 1);    // compare [50]
-      assertUnit(Spy::numCopyMove() == 1);    // assign move [60]
-      assertUnit(Spy::numAssignMove() == 0);
+      //       [[40]]            70  
+      //     +----+          +----+----+
+      //    20              60        80  
+      assertUnit(Spy::numDestructor() == 1);  // destroy [30]
+      assertUnit(Spy::numDelete() == 1);      // delete [30]
+      assertUnit(Spy::numLessthan() == 0);
       assertUnit(Spy::numCopy() == 0);
       assertUnit(Spy::numAlloc() == 0);
       assertUnit(Spy::numEquals() == 0);
-      assertUnit(Spy::numDestructor() == 0);
-      assertUnit(Spy::numDelete() == 0);
-      assertUnit(Spy::numAssign() == 0);
-      assertUnit(Spy::numDefault() == 0);
-      assertUnit(Spy::numNondefault() == 0);
-      assertUnit(fBST == true);
-      //           (50) 
-      //             +----+
-      //                 (60) 
-      assertUnit(bst.size() == 2);
-      assertUnit(bst.numElements == 2);
-      assertUnit(bst.root == p50);
-
-      assertUnit(p50 != nullptr);
-      if (p50)
-      {
-         assertUnit(p50->data == Spy(50));
-         assertUnit(p50->pLeft == nullptr);
-         assertUnit(p50->pRight != nullptr);
-         assertUnit(p50->pParent == nullptr);
-      }
-      if (p50 && p50->pRight)
-      {
-         assertUnit(p50->pRight->data == Spy(60));
-         assertUnit(p50->pRight->pLeft == nullptr);
-         assertUnit(p50->pRight->pRight == nullptr);
-         assertUnit(p50->pRight->pParent == p50);
-      }
-      // teardown
-      if (p50 && p50->pRight && p50->pRight != p50)
-         delete p50->pRight;
-      if (p50)
-         delete p50;
-      bst.root = nullptr;
-      bst.numElements = 0;
-   }
-
-   // insert an element to the left of a single-element tree
-   void test_insertMove_oneLeft()
-   {  // setup
-      //            (50) 
-      custom::BST <Spy> bst;
-      custom::BST<Spy>::BNode* p50 = new custom::BST<Spy>::BNode(Spy(50));
-      bst.root = p50;
-      bst.numElements = 1;
-      Spy s(40);
-      Spy::reset();
-      // exercise
-      auto fBST = bst.insert(std::move(s));
-      // verify
-      assertUnit(Spy::numLessthan() == 1);    // compare [50]
-      assertUnit(Spy::numCopyMove() == 1);    // assign move [40]
-      assertUnit(Spy::numAssignMove() == 0);
-      assertUnit(Spy::numCopy() == 0);
-      assertUnit(Spy::numAlloc() == 0);   
-      assertUnit(Spy::numEquals() == 0);
-      assertUnit(Spy::numDestructor() == 0);
-      assertUnit(Spy::numDelete() == 0);
-      assertUnit(Spy::numAssign() == 0);
-      assertUnit(Spy::numDefault() == 0);
-      assertUnit(Spy::numNondefault() == 0);
-      assertUnit(s.empty() == true);
-      assertUnit(fBST == true);
-
-      //           (50) 
-      //        +----+
-      //      (40) 
-      assertUnit(bst.size() == 2);
-      assertUnit(bst.numElements == 2);
-      assertUnit(bst.root == p50);
-
-      assertUnit(p50 != nullptr);
-      if (p50)
-      {
-         assertUnit(p50->data == Spy(50));
-         assertUnit(p50->pLeft != nullptr);
-         assertUnit(p50->pRight == nullptr);
-         assertUnit(p50->pParent == nullptr);
-      }
-
-      if (p50 && p50->pLeft)
-      {
-         assertUnit(p50->pLeft->data == Spy(40));
-         assertUnit(p50->pLeft->pLeft == nullptr);
-         assertUnit(p50->pLeft->pRight == nullptr);
-         assertUnit(p50->pLeft->pParent == p50);
-      }
-
-      // teardown
-      if (p50 && p50->pLeft && p50->pLeft != p50)
-         delete p50->pLeft;
-      if (p50)
-         delete p50;
-      bst.root = nullptr;
-      bst.numElements = 0;
-   }
-
-   // insert a duplicate item in a BST
-   void test_insertMove_duplicate()
-   {  // setup
-      //            (50) 
-      custom::BST <Spy> bst;
-      custom::BST<Spy>::BNode* p50 = new custom::BST<Spy>::BNode(Spy(50));
-      bst.root = p50;
-      bst.numElements = 1;
-      Spy s(50);
-      Spy::reset();
-      // exercise
-      auto fBST = bst.insert(std::move(s), false /* keepUnique */);
-      // verify
-      assertUnit(Spy::numLessthan() == 1);    // compare [50]
-      assertUnit(Spy::numCopyMove() == 1);    // assign move [50]
-      assertUnit(Spy::numAssignMove() == 0);
-      assertUnit(Spy::numCopy() == 0);
-      assertUnit(Spy::numAlloc() == 0);
-      assertUnit(Spy::numEquals() == 0);
-      assertUnit(Spy::numDestructor() == 0);
-      assertUnit(Spy::numDelete() == 0);
-      assertUnit(Spy::numAssign() == 0);
-      assertUnit(Spy::numDefault() == 0);
-      assertUnit(Spy::numNondefault() == 0);
-      assertUnit(s.empty() == true);
-      assertUnit(fBST == true);
-      //           (50) 
-      //        +----+
-      //      (50r)
-      assertUnit(bst.size() == 2);
-      assertUnit(bst.numElements == 2);
-      assertUnit(bst.root == p50);
-
-      assertUnit(p50 != nullptr);
-      if (p50)
-      {
-         assertUnit(p50->data == Spy(50));
-         assertUnit(p50->pLeft == nullptr);
-         assertUnit(p50->pRight != nullptr);
-         assertUnit(p50->pParent == nullptr);
-      }
-
-      if (p50 && p50->pRight)
-      {
-         assertUnit(p50->pRight->data == Spy(50));
-         assertUnit(p50->pRight->pLeft == nullptr);
-         assertUnit(p50->pRight->pRight == nullptr);
-         assertUnit(p50->pRight->pParent == p50);
-      }
-
-      // teardown
-      if (p50 && p50->pRight && p50->pRight != p50)
-         delete p50->pRight;
-      if (p50)
-         delete p50;
-      bst.root = nullptr;
-      bst.numElements = 0;
-   }
-
-   // insert an item when it already exists
-   void test_insertMove_keepUnique()
-   {  // setup
-      //                 50 
-      //          +-------+-------+
-      //         30              70  
-      //     +----+----+     +----+----+
-      //    20        40    60        80  
-      custom::BST <Spy> bst;
-      setupStandardFixture(bst);
-      Spy s(40);
-      Spy::reset();
-      // exercise
-      auto fBST = bst.insert(std::move(s), true /* keepUnique */);
-      // verify
-      assertUnit(Spy::numLessthan() == 2);    // compare [50][30]
-      assertUnit(Spy::numEquals() == 3);      // compare [50][30][40]
-      assertUnit(Spy::numCopy() == 0);
-      assertUnit(Spy::numAlloc() == 0);
-      assertUnit(Spy::numDestructor() == 0);
-      assertUnit(Spy::numDelete() == 0);
       assertUnit(Spy::numAssign() == 0);
       assertUnit(Spy::numDefault() == 0);
       assertUnit(Spy::numNondefault() == 0);
       assertUnit(Spy::numCopyMove() == 0);
       assertUnit(Spy::numAssignMove() == 0);
-      assertUnit(s.empty() == false);
-      assertUnit(fBST == false);
-      //                 50 
-      //          +-------+-------+
-      //         30              70  
-      //     +----+----+     +----+----+
-      //    20        40    60        80  
-      assertStandardFixture(bst);
+
+      assertUnit(bst.numElements == 6);
+      assertUnit(bst.root != nullptr);
+      if (bst.root)
+      {
+         assertUnit(itReturn.pNode == bst.root->pLeft);
+         assertUnit(bst.root->data == Spy(50));
+         assertUnit(bst.root->pParent == nullptr);
+         assertUnit(bst.root->pLeft != nullptr);
+         if (bst.root->pLeft)
+         {
+            assertUnit(bst.root->pLeft->data == Spy(40));
+            assertUnit(bst.root->pLeft->pParent == bst.root);
+            assertUnit(bst.root->pLeft->pLeft != nullptr);
+            if (bst.root->pLeft->pLeft)
+            {
+               assertUnit(bst.root->pLeft->pLeft->data == Spy(20));
+               assertUnit(bst.root->pLeft->pLeft->pParent == bst.root->pLeft);
+               assertUnit(bst.root->pLeft->pLeft->pLeft == nullptr);
+               assertUnit(bst.root->pLeft->pLeft->pRight == nullptr);
+            }
+            assertUnit(bst.root->pLeft->pRight == nullptr);
+         }
+         assertUnit(bst.root->pRight != nullptr);
+         if (bst.root->pRight)
+         {
+            assertUnit(bst.root->pRight->data == Spy(70));
+            assertUnit(bst.root->pRight->pParent == bst.root);
+            assertUnit(bst.root->pRight->pLeft != nullptr);
+            if (bst.root->pRight->pLeft)
+            {
+               assertUnit(bst.root->pRight->pLeft->data == Spy(60));
+               assertUnit(bst.root->pRight->pLeft->pParent == bst.root->pRight);
+               assertUnit(bst.root->pRight->pLeft->pLeft == nullptr);
+               assertUnit(bst.root->pRight->pLeft->pRight == nullptr);
+            }
+            assertUnit(bst.root->pRight->pRight != nullptr);
+            if (bst.root->pRight->pRight)
+            {
+               assertUnit(bst.root->pRight->pRight->data == Spy(80));
+               assertUnit(bst.root->pRight->pRight->pParent == bst.root->pRight);
+               assertUnit(bst.root->pRight->pRight->pLeft == nullptr);
+               assertUnit(bst.root->pRight->pRight->pRight == nullptr);
+            }
+         }
+      }
       // teardown
       teardownStandardFixture(bst);
    }

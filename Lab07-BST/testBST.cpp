@@ -8,8 +8,9 @@
  ************************************************************************/
 
 #ifndef DEBUG
-#define DEBUG   // Remove this to skip the unit tests
+#define DEBUG   
 #endif
+ //#undef DEBUG  // Remove this comment to disable unit tests
 
 #include "testBST.h"        // for the BST unit tests
 #include "testSpy.h"        // for the spy unit tests
