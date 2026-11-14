@@ -333,8 +333,10 @@ V& map <K, V> ::at(const K& key)
 template <typename K, typename V>
 const V& map <K, V> ::at(const K& key) const
 {
-   // BST::find is not const, so reuse the non-const version
-   return const_cast<map <K, V> *>(this)->at(key);
+   auto it = bst.find(Pairs(key));
+   if (it == bst.end())
+      throw std::out_of_range("invalid map<K, T> key");
+   return it.pNode->data.second;
 }
 
 /*****************************************************

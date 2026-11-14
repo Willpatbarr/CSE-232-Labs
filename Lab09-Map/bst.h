@@ -94,7 +94,7 @@ public:
    // Access
    //
 
-   iterator find(const T& t);
+   iterator find(const T& t) const;
 
    // 
    // Insert
@@ -620,7 +620,7 @@ typename BST <T> :: iterator custom :: BST <T> :: begin() const noexcept
  * Return the node corresponding to a given value
  ****************************************************/
 template <typename T>
-typename BST <T> :: iterator BST<T> :: find(const T & t)
+typename BST <T> :: iterator BST<T> :: find(const T & t) const
 {
 
     BNode* p = root;
